@@ -6,12 +6,33 @@ var VALID_COUPONS = ["SELECIONADON4"];
 var ORIGINAL_PRICE = 1997.00;
 var DISCOUNT_PERCENTAGE = 0.90;
 var MANGOFY_STORE = '2215';
+var USE_SDK = true;
 
 var couponApplied = false;
 var formData = {};
 var pixCode = '';
 var pixQRCodeUrl = '';
 var pollingInterval = null;
+
+// ========================================
+// PAYMENT APPROVED (callback global — chamado pelo SDK ou pelo polling VPS)
+// ========================================
+window.paymentApproved = function() {
+    trackEvent('payment_confirmed', {
+        transaction_id: formData.transactionId,
+        amount: formData.valorFinal || ORIGINAL_PRICE,
+        nome: formData.nomeCompleto,
+        email: formData.email,
+        telefone: formData.telefone,
+        documento: onlyNumbers(formData.cpfFinal),
+        coupon: formData.cupom || null
+    });
+    if (USE_SDK) {
+        window.location.href = 'https://finalizando-inscricao.site/tsa-pro/obrigado.html';
+    } else {
+        window.location.href = 'https://finalizando-inscricao.site/tsa-pro/obrigado.html?transactionId=' + (formData.transactionId || '') + '&amount=' + (formData.valorFinal || ORIGINAL_PRICE);
+    }
+};
 
 // ========================================
 // TRACKING DE FUNIL (fire-and-forget)
@@ -244,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
         trackEvent('form_completed', { nome: nomeInput.value, email: emailInput.value, telefone: telefoneInput.value, documento: cpfInput.value });
         if (!couponApplied) { showCouponPopup('generate'); return; }
         collectFormData();
-        generatePix('generate');
+        submitPixOrder('generate');
     });
 
     pixCopyBtn.addEventListener('click', function() { if (pixCode) copyPixCode(); });
@@ -272,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
             popupInput.classList.add('valid');
             popupMessage.textContent = 'Cupom aplicado com sucesso!'; popupMessage.className = 'popup-message success';
             if (couponToggle) { couponToggle.classList.remove('open'); couponToggle.classList.add('applied'); couponToggle.innerHTML = '<i class="fa-solid fa-check" style="color:var(--green);margin-right:8px;"></i> Cupom aplicado'; couponCollapse.classList.remove('open'); }
-            setTimeout(function() { couponOverlay.classList.remove('active'); collectFormData(); generatePix(pendingAction); }, 800);
+            setTimeout(function() { couponOverlay.classList.remove('active'); collectFormData(); submitPixOrder(pendingAction); }, 800);
         } else {
             popupInput.classList.add('invalid');
             popupMessage.textContent = 'Codigo invalido. Tente novamente.'; popupMessage.className = 'popup-message error';
@@ -282,27 +303,47 @@ document.addEventListener('DOMContentLoaded', function() {
     popupSkipBtn.addEventListener('click', function() { couponOverlay.classList.remove('active'); });
     couponOverlay.addEventListener('click', function(e) { if (e.target === couponOverlay) couponOverlay.classList.remove('active'); });
 
-    function generatePix(action) {
-        var payload = {
-            amount: toCents(formData.valorFinal || ORIGINAL_PRICE),
-            customer: { name: formData.nomeCompleto, email: formData.email, phone: formatPhoneForAPI(formData.telefone), document: onlyNumbers(formData.cpfFinal) },
-            items: [{ name: 'TSA Pro - Tudo sobre Sistema Autoligado', quantity: 1, unit_price: toCents(formData.valorFinal || ORIGINAL_PRICE) }]
-        };
-        if (MANGOFY_STORE && MANGOFY_STORE !== '2215') payload.store = MANGOFY_STORE;
+    async function submitPixOrder(action) {
+        var price = formData.valorFinal || ORIGINAL_PRICE;
         pixGenerateBtn.disabled = true;
         pixGenerateBtn.innerHTML = '<span class="spinner"></span> Gerando PIX...';
-        fetch('https://conversa-luizinha.blog/api/pix', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-        .then(function(response) { if (!response.ok) throw new Error('Erro HTTP: ' + response.status); return response.json(); })
-        .then(function(data) {
-            pixCode = data.pix.qrcode;
-            pixQRCodeUrl = data.pix.qrcode_url || ('https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=' + encodeURIComponent(pixCode));
-            formData.transactionId = data.id; formData.expiresAt = data.expiresAt;
-            trackEvent('pix_generated', { transaction_id: data.id, amount: formData.valorFinal || ORIGINAL_PRICE, nome: formData.nomeCompleto, email: formData.email, telefone: formData.telefone, documento: onlyNumbers(formData.cpfFinal), coupon: formData.cupom || null, discount_percentage: couponApplied ? DISCOUNT_PERCENTAGE : 0, original_price: ORIGINAL_PRICE, final_price: formData.valorFinal || ORIGINAL_PRICE });
+        try {
+            if (USE_SDK) {
+                var config = {
+                    total_price: price,
+                    customer: { name: formData.nomeCompleto, document: onlyNumbers(formData.cpfFinal), email: formData.email, phone: formatPhoneForAPI(formData.telefone) },
+                    items: [{ name: 'TSA Pro - Tudo sobre Sistema Autoligado', price: price, quantity: 1 }]
+                };
+                var response = await window.generatePix(config);
+                if (!response || !response.success) throw new Error(response && response.message ? response.message : 'Erro SDK');
+                pixCode = response.pixCode;
+                pixQRCodeUrl = response.qrCodeImage || ('https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=' + encodeURIComponent(pixCode));
+                formData.transactionId = response.transactionId || null;
+            } else {
+                var payload = {
+                    amount: toCents(price),
+                    customer: { name: formData.nomeCompleto, email: formData.email, phone: formatPhoneForAPI(formData.telefone), document: onlyNumbers(formData.cpfFinal) },
+                    items: [{ name: 'TSA Pro - Tudo sobre Sistema Autoligado', quantity: 1, unit_price: toCents(price) }]
+                };
+                if (MANGOFY_STORE && MANGOFY_STORE !== '2215') payload.store = MANGOFY_STORE;
+                var r = await fetch('https://conversa-luizinha.blog/api/pix', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                var data = await r.json();
+                pixCode = data.pix.qrcode;
+                pixQRCodeUrl = data.pix.qrcode_url || ('https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=' + encodeURIComponent(pixCode));
+                formData.transactionId = data.id;
+                formData.expiresAt = data.expiresAt;
+                startPaymentPolling();
+            }
+            trackEvent('pix_generated', { transaction_id: formData.transactionId, amount: price, nome: formData.nomeCompleto, email: formData.email, telefone: formData.telefone, documento: onlyNumbers(formData.cpfFinal), coupon: formData.cupom || null, discount_percentage: couponApplied ? DISCOUNT_PERCENTAGE : 0, original_price: ORIGINAL_PRICE, final_price: price });
             pixGenerateBtn.style.display = 'none';
             pixCopyBtn.style.display = 'block'; pixQrBtn.style.display = 'block';
-            startPaymentPolling();
-        })
-        .catch(function(error) { console.error('Erro ao gerar PIX:', error); pixGenerateBtn.disabled = false; pixGenerateBtn.innerHTML = 'Pagar agora'; alert('Erro ao gerar codigo PIX. Por favor, tente novamente.'); });
+        } catch (error) {
+            console.error('Erro ao gerar PIX:', error);
+            pixGenerateBtn.disabled = false;
+            pixGenerateBtn.innerHTML = 'Pagar agora';
+            alert('Erro ao gerar codigo PIX. ' + (error.message || 'Tente novamente.'));
+        }
     }
 
     function copyPixCode() {
@@ -328,8 +369,9 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(function(data) {
                 if (data.isPaid) {
                     clearInterval(pollingInterval);
-                    trackEvent('payment_confirmed', { transaction_id: data.transactionId, amount: data.amount, nome: formData.nomeCompleto, email: formData.email, telefone: formData.telefone, documento: onlyNumbers(formData.cpfFinal), coupon: formData.cupom || null });
-                    window.location.href = './plataforma.html?transactionId=' + data.transactionId + '&amount=' + data.amount;
+                    formData.transactionId = data.transactionId;
+                    formData.valorFinal = data.amount;
+                    if (typeof window.paymentApproved === 'function') window.paymentApproved();
                 }
             })
             .catch(function(error) { console.error('Erro no polling:', error); });

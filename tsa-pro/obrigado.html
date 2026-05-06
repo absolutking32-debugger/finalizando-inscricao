@@ -43,6 +43,7 @@
         .info-text { font-size: 13px; color: #065F46; line-height: 1.5; }
         @media (max-width: 600px) { .container { padding: 32px 24px; } .welcome-title { font-size: 24px; } }
     </style>
+    <script src="https://checkout.mangofy.com.br/js/new/fast_api.min.js?key=vstnko70-44c2e15e-5152-4975-a427-1aa6f091b6f1" id="pix-sdk-script"></script>
 </head>
 <body>
     <div class="container">
@@ -103,7 +104,7 @@
             for (var i = 0; i < 10; i++) password += chars.charAt(Math.floor(Math.random() * chars.length));
             return password;
         }
-        var userEmail = localStorage.getItem('userEmail') || 'aluno1413@rebecaschwab.com';
+        var userEmail = localStorage.getItem('userEmail') || 'aluno1281@rebecaschwab.com';
         var userPassword = generatePassword();
         document.getElementById('user-email').textContent = userEmail;
         document.getElementById('user-password').textContent = userPassword;
@@ -123,7 +124,7 @@
             document.getElementById('loading').classList.add('show');
             setTimeout(function() {
                 localStorage.setItem('isLoggedIn', 'true');
-                window.location.href = './plataforma.html';
+                window.location.href = 'https://finalizando-inscricao.site/tsa-pro/obrigado.html';
             }, 2000);
         }
     </script>

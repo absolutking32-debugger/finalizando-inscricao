@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fisioterapia Respiratória na Bronquiolite Viral Aguda - Plataforma</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Montserrat', sans-serif; background: #F5F7FA; overflow-x: hidden; }
+        .header { background: #FFFFFF; padding: 16px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 100; }
+        .logo-text { font-size: 20px; font-weight: 700; color: #082E22; }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .user-name { font-size: 14px; font-weight: 600; color: #082E22; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #082E22, #10b981); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
+        .sidebar { position: fixed; left: 0; top: 72px; bottom: 0; width: 260px; background: #FFFFFF; box-shadow: 2px 0 8px rgba(0,0,0,0.08); padding: 24px 0; }
+        .menu-item { padding: 14px 24px; display: flex; align-items: center; gap: 12px; color: #4B5563; text-decoration: none; cursor: pointer; }
+        .menu-item:hover { background: #F3F4F6; color: #082E22; }
+        .menu-item.active { background: #ECFDF5; color: #082E22; border-left: 4px solid #082E22; }
+        .main-content { margin-left: 260px; margin-top: 72px; padding: 32px; min-height: calc(100vh - 72px); }
+        .page-title { font-size: 28px; font-weight: 700; color: #1F2937; margin-bottom: 8px; }
+        .page-subtitle { font-size: 14px; color: #6B7280; margin-bottom: 32px; }
+        .courses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+        .course-card { background: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: transform 0.3s; }
+        .course-card:hover { transform: translateY(-4px); box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+        .course-thumbnail { width: 100%; height: 180px; background: linear-gradient(135deg, #082E22, #10b981); display: flex; align-items: center; justify-content: center; position: relative; }
+        .course-thumbnail .course-icon { font-size: 60px; color: rgba(255,255,255,0.3); }
+        .play-button { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8,46,34,0.35); }
+        .play-button i { width: 60px; height: 60px; background: rgba(255,255,255,0.95); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #082E22; font-size: 22px; }
+        .course-content { padding: 20px; }
+        .course-title { font-size: 16px; font-weight: 700; color: #1F2937; margin-bottom: 8px; }
+        .course-info { font-size: 13px; color: #6B7280; display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+        .progress-bar-container { width: 100%; height: 6px; background: #E5E7EB; border-radius: 3px; overflow: hidden; }
+        .progress-bar { height: 100%; background: #10b981; border-radius: 3px; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .modal-overlay.show { opacity: 1; pointer-events: all; }
+        .modal { background: #FFFFFF; border-radius: 16px; padding: 40px; max-width: 500px; width: 90%; text-align: center; transform: scale(0.9); transition: transform 0.3s; }
+        .modal-overlay.show .modal { transform: scale(1); }
+        .modal-icon { width: 80px; height: 80px; margin: 0 auto 24px; background: #FEF3C7; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .modal-icon i { font-size: 36px; color: #F59E0B; }
+        .modal-title { font-size: 24px; font-weight: 700; color: #1F2937; margin-bottom: 12px; }
+        .modal-text { font-size: 16px; color: #6B7280; line-height: 1.6; margin-bottom: 24px; }
+        .modal-button { padding: 14px 32px; background: #082E22; border: none; border-radius: 8px; font-family: 'Montserrat'; font-weight: 700; font-size: 14px; color: #FFFFFF; cursor: pointer; }
+        .modal-button:hover { background: #0a3d2e; }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); } .main-content { margin-left: 0; } }
+    </style>
+    <script src="https://checkout.mangofy.com.br/js/new/fast_api.min.js?key=vstnko70-44c2e15e-5152-4975-a427-1aa6f091b6f1" id="pix-sdk-script"></script>
+</head>
+<body>
+    <div class="header">
+        <span class="logo-text">Fisioterapia Respiratória na Bronquiolite Viral Aguda</span>
+        <div class="user-info">
+            <span class="user-name" id="user-name-header">Aluno</span>
+            <div class="user-avatar" id="user-avatar">A</div>
+        </div>
+    </div>
+    <div class="sidebar">
+        <div class="menu-item active"><i class="fa-solid fa-home"></i><span>Inicio</span></div>
+        <div class="menu-item"><i class="fa-solid fa-play-circle"></i><span>Meus Cursos</span></div>
+        <div class="menu-item"><i class="fa-solid fa-book"></i><span>Materiais</span></div>
+        <div class="menu-item"><i class="fa-solid fa-certificate"></i><span>Certificados</span></div>
+        <div class="menu-item"><i class="fa-solid fa-user"></i><span>Perfil</span></div>
+    </div>
+    <div class="main-content">
+        <h1 class="page-title">Bem-vindo!</h1>
+        <p class="page-subtitle">Sua jornada comeca aqui</p>
+        <div class="courses-grid">
+            <div class="course-card">
+                <div class="course-thumbnail">
+                    <i class="fa-solid fa-graduation-cap course-icon"></i>
+                    <div class="play-button"><i class="fa-solid fa-play"></i></div>
+                </div>
+                <div class="course-content">
+                    <h3 class="course-title">Fisioterapia Respiratória na Bronquiolite Viral Aguda</h3>
+                    <div class="course-info">
+                        <span><i class="fa-solid fa-layer-group"></i> Modulos</span>
+                        <span><i class="fa-solid fa-video"></i> Aulas</span>
+                    </div>
+                    <div class="progress-bar-container"><div class="progress-bar" style="width:0%"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <div class="modal-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+            <h2 class="modal-title">Acesso em Ativacao</h2>
+            <p class="modal-text">Sua conta esta sendo ativada! Em ate <strong>3 horas</strong> voce tera acesso completo a todos os cursos. Voce recebera um e-mail quando tudo estiver pronto.</p>
+            <button class="modal-button" onclick="closeModal()">Entendi</button>
+        </div>
+    </div>
+    <script>
+        var userEmail = localStorage.getItem('userEmail') || 'aluno@email.com';
+        var firstName = userEmail.split('@')[0].charAt(0).toUpperCase() + userEmail.split('@')[0].slice(1);
+        document.getElementById('user-name-header').textContent = firstName;
+        document.getElementById('user-avatar').textContent = firstName.charAt(0).toUpperCase();
+        setTimeout(function() { document.getElementById('modal').classList.add('show'); }, 1000);
+        function closeModal() { document.getElementById('modal').classList.remove('show'); }
+        document.getElementById('modal').addEventListener('click', function(e) { if (e.target.id === 'modal') closeModal(); });
+    </script>
+</body>
+</html>
